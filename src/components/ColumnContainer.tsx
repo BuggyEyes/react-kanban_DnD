@@ -1,24 +1,30 @@
 import {Column, Id, Task} from "../types.ts";
 import TrashIcon from "../icons/TrashIcon.tsx";
-import {useSortable} from "@dnd-kit/sortable";
+import {SortableContext, useSortable} from "@dnd-kit/sortable";
 import {CSS} from "@dnd-kit/utilities"
-import {useState} from "react";
+import {useMemo, useState} from "react";
 import PlusIcon from "../icons/PlusIcon.tsx";
 import TaskCard from "./TaskCard.tsx";
+
 interface Props {
     column: Column
     deleteColumn: (id: Id) => void;
-    updateColumn: (id:Id,title: string) => void
+    updateColumn: (id: Id, title: string) => void
     createTask: (columnId: Id) => void;
     tasks: Task[];
-    deleteTask: (id:Id) => void;
-    updateTask: (id:Id, content:string) => void;
+    deleteTask: (id: Id) => void;
+    updateTask: (id: Id, content: string) => void;
 }
 
 function ColumnContainer(props: Props) {
     const {column, deleteColumn, updateColumn, createTask, tasks, deleteTask, updateTask} = props;
     const [editMode, setEditMode] = useState(false)
-    const {setNodeRef,
+    const tasksIds = useMemo(() => {
+        return tasks.map(task => task.id)
+    }, [tasks])
+
+    const {
+        setNodeRef,
         attributes,
         listeners,
         transform,
@@ -32,7 +38,7 @@ function ColumnContainer(props: Props) {
         },
         disabled: editMode,
     })
-    
+
     const style = {
         transition,
         transform: CSS.Transform.toString(transform),
@@ -56,7 +62,7 @@ function ColumnContainer(props: Props) {
 
         </div>
     }
-    
+
     return (
         <div
             ref={setNodeRef}
@@ -75,7 +81,7 @@ function ColumnContainer(props: Props) {
             <div
                 {...attributes}
                 {...listeners}
-                onClick={()=> {
+                onClick={() => {
                     setEditMode(true)
                 }}
                 className="
@@ -124,18 +130,18 @@ function ColumnContainer(props: Props) {
                             outline-none
                             px-2
                             "
-                            value= {column.title}
+                            value={column.title}
                             onChange={e => updateColumn(column.id, e.target.value)}
                             autoFocus
-                            onBlur={() =>{
-                        setEditMode(false)
+                            onBlur={() => {
+                                setEditMode(false)
 
-                    } }
-                    onKeyDown={e => {
-                        if (e.key !=="Enter") return;
-                        setEditMode(false);
-                    }}
-                    />}
+                            }}
+                            onKeyDown={e => {
+                                if (e.key !== "Enter") return;
+                                setEditMode(false);
+                            }}
+                        />}
                 </div>
                 <button
                     onClick={() => {
@@ -155,12 +161,13 @@ function ColumnContainer(props: Props) {
             {/*Column task container*/}
             <div className="flex flex-grow flex-col gap-4 p-2
             overflow-x-hidden overflow-y-auto">
-                {
-                    tasks.map(task => (
-                        <TaskCard key={task.id} task={task} deleteTask={deleteTask} updateTask={deleteTask}/>
+                <SortableContext items={tasksIds}>
+                    {
+                        tasks.map(task => (
+                            <TaskCard key={task.id} task={task} deleteTask={deleteTask} updateTask={updateTask}/>
 
-                ))
-                }
+                        ))}
+                </SortableContext>
             </div>
             {/*Column footer*/}
             <button className="
@@ -175,9 +182,9 @@ function ColumnContainer(props: Props) {
             hover: bg-mainBackgroundColor hover:text-rose-500
             active:bg-black"
 
-            onClick={() =>{
-                createTask(column.id);
-            } }
+                    onClick={() => {
+                        createTask(column.id);
+                    }}
             >
                 <PlusIcon/>
                 Add task
